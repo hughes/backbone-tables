@@ -1,0 +1,12 @@
+{
+    "name": "backbone-tables",
+    "description": "An attempt at sane, modular, functional tables based on Backbone",
+    "keywords": ["Backbone", "tables", "datatables"],
+    "author": "Matt Hughes <https://github.com/hughes>",
+    "dependencies": {
+        "underscore": ">=1.4.2",
+        "backbone": ">=0.9.2"
+    },
+    "main": "backbone-tables.js",
+    "version": "0.0.0"
+}
