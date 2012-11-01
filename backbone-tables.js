@@ -12,10 +12,45 @@
         defaults: {
             columns: [],
             items: undefined,
+            paginate: false,
+            items_per_page: 20,
         },
+        sort: function (index, reverse) {
+            var items = this.get('items');
+
+            // set the collection to use a new comparator
+            // it will look at the data corresponding to the 
+            var key = this.get('columns')[index].data;
+            var comparator = function (a, b) {
+                var first = a.get(key), second = b.get(key);
+                var result = first > second ? 1 : first == second ? 0 : -1
+                if(reverse) {
+                    result = -result;
+                }
+                return result;
+            }
+            items.comparator = comparator;
+            items.sort();
+        }
     });
     Backbone.TableView = Backbone.View.extend({
         tagName: 'table',
+        events: {
+            'click th': 'sort'
+        },
+        sort: function (event) {
+            var target = $(event.target);
+            var index = target.attr('index');
+            var reverse = target.attr('sort') == 'down';
+
+            this.model.sort(index, reverse);
+
+            // set the 'sort' attribute
+            this.$('>tr>th[sort]').removeAttr('sort');
+            target.attr('sort', reverse ? 'up' : 'down');
+
+            this.render_body();
+        },
         render: function () {
             this.head = $('<thead></thead>');
             this.body = $('<tbody></tbody>');
