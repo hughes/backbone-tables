@@ -9,3 +9,11 @@
     border-top: 0px;
     border-bottom: 4px solid #000000; 
 }
+
+.table tfoot {
+    width: 100%;
+}
+.table tfoot div.right {
+    display: inline-block;
+    float: right;
+}

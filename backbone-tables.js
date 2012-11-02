@@ -14,7 +14,7 @@
             columns: [],
             items: undefined,
             paginate: false,
-            items_per_page: 20,
+            items_per_page: 10,
             page: 1,
             filter: false,
             filter_value: ''
@@ -93,6 +93,8 @@
             this.model.get('items').bind('change', this.render_body, this);
             this.model.bind('change:paginate', this.render_body, this);
             this.model.bind('change:paginate', this.render_foot, this);
+            this.model.bind('change:items_per_page', this.render_body, this);
+            this.model.bind('change:items_per_page', this.render_foot, this);
             this.model.bind('change:filter', this.render, this);
             this.model.get('columns').bind('change add remove', this.render, this);
         },
@@ -154,9 +156,6 @@
         },
         render_caption: function () {
             var caption_html = '';
-            if (this.model.get('filter')) {
-                caption_html += 'Filter <input class="filter" value="' + this.model.get('filter_value')+'" />';
-            }
             this.caption.html(caption_html);
         },
         render_head: function () {
@@ -198,7 +197,7 @@
         },
         render_foot: function () {
             var foot_html, last_page;
-            foot_html = '<div class="btn-group">';
+            foot_html = '<tr><td colspan="100%"><div class="btn-group">';
             if (this.model.get('paginate')) {
                 last_page = this.model.get_last_page();
                 foot_html += '<button class="btn first">&laquo;</button>';
@@ -209,6 +208,10 @@
                 foot_html += '<button class="btn last">&raquo;</button>';
             }
             foot_html += '</div>';
+            if (this.model.get('filter')) {
+                foot_html += '<div class="right">Filter <input class="filter" value="' + this.model.get('filter_value')+'" /></div>';
+            }
+            foot_html += "</td></tr>"
             this.foot.html(foot_html);
         }
     });
