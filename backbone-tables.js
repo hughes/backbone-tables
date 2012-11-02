@@ -9,6 +9,7 @@
     _ = window._;
     Backbone = window.Backbone;
     Backbone.Table = Backbone.Model.extend({
+        Column: Backbone.Model.extend(),
         defaults: {
             columns: [],
             items: undefined,
@@ -19,6 +20,11 @@
             filter_value: ''
         },
         initialize: function () {
+            this.set({
+                columns: new (Backbone.Collection.extend({
+                    model: this.Column
+                }))(this.get('columns'))
+            });
             this.bind('change:filter_value change:items_per_page change:page change:filter', this.clamp_page, this);
         },
         clamp_page: function () {
@@ -36,7 +42,7 @@
 
             // set the collection to use a new comparator
             // it will look at the data corresponding to the 
-            key = this.get('columns')[index].data;
+            key = this.get('columns').at(index).get('data');
             comparator = function (a, b) {
                 var first, second, result;
                 first = a.get(key); second = b.get(key);
@@ -50,7 +56,7 @@
             items.sort();
         },
         filtered: function () {
-            var keys = _.pluck(this.get('columns'), 'data'), value = this.get('filter_value');
+            var keys = this.get('columns').pluck('data'), value = this.get('filter_value');
             if (!value || !this.get('filter')) {
                 return this.get('items').toArray();
             }
@@ -88,6 +94,7 @@
             this.model.bind('change:paginate', this.render_body, this);
             this.model.bind('change:paginate', this.render_foot, this);
             this.model.bind('change:filter', this.render, this);
+            this.model.get('columns').bind('change add remove', this.render, this);
         },
         filter: function (event) {
             this.model.set({
@@ -123,8 +130,10 @@
             this.model.sort(index, reverse);
 
             // set the 'sort' attribute
-            this.$('>tr>th[sort]').removeAttr('sort');
+            this.$('>thead>tr>th[sort]').removeClass('btn').removeAttr('sort');
+            this.$('>thead span.caret').remove();
             target.attr('sort', reverse ? 'up' : 'down');
+            target.append('<span class="caret"></span>').addClass(reverse ? "up" : "");
 
             this.render_body();
         },
@@ -146,14 +155,14 @@
         render_caption: function () {
             var caption_html = '';
             if (this.model.get('filter')) {
-                caption_html += 'Filter <input class="filter" value="'+this.model.get('filter_value')+'" />';
+                caption_html += 'Filter <input class="filter" value="' + this.model.get('filter_value')+'" />';
             }
             this.caption.html(caption_html);
         },
         render_head: function () {
             var head_row = $('<tr></tr>');
-            _.each(this.model.get('columns'), function (column, index) {
-                head_row.append('<th index="' + index + '">' + column.title + '</th>');
+            this.model.get('columns').each(function (column, index) {
+                head_row.append('<th index="' + index + '">' + column.get('title') + '</th>');
             });
             this.head.empty().append(head_row);
         },
@@ -171,10 +180,10 @@
             cell_func = function (column) {
                 var cell = $('<td></td>');
                 // use the column's render function if it exists
-                if (typeof column.render === 'function') {
-                    cell.append(column.render(item));
+                if (typeof column.get('render') === 'function') {
+                    cell.append(column.get('render')(item));
                 } else {
-                    cell.append(item.get(column.data));
+                    cell.append(item.get(column.get('data')));
                 }
                 row.append(cell);
             };
@@ -183,7 +192,7 @@
             for (i = first; i < last; i += 1) {
                 item = filtered[i];
                 row = $('<tr></tr>');
-                _.each(this.model.get('columns'), cell_func);
+                this.model.get('columns').each(cell_func);
                 this.body.append(row);
             }
         },
