@@ -51,7 +51,7 @@
         },
         filtered: function () {
             var keys = _.pluck(this.get('columns'), 'data'), value = this.get('filter_value');
-            if (!value) {
+            if (!value || !this.get('filter')) {
                 return this.get('items').toArray();
             }
             return this.get('items').filter(function (item) {
@@ -68,6 +68,7 @@
     });
     Backbone.TableView = Backbone.View.extend({
         tagName: 'table',
+        className: 'table',
         events: {
             'click th': 'sort',
             'click .prev': 'prev_page',
@@ -84,6 +85,9 @@
             this.model.bind('change:filter_value', this.render_foot, this);
             this.model.bind('change:filter_value', this.render_body, this);
             this.model.get('items').bind('change', this.render_body, this);
+            this.model.bind('change:paginate', this.render_body, this);
+            this.model.bind('change:paginate', this.render_foot, this);
+            this.model.bind('change:filter', this.render, this);
         },
         filter: function (event) {
             this.model.set({
@@ -125,6 +129,7 @@
             this.render_body();
         },
         render: function () {
+            this.$el.empty();
             this.caption = $('<caption></caption>');
             this.head = $('<thead></thead>');
             this.body = $('<tbody></tbody>');
@@ -141,7 +146,7 @@
         render_caption: function () {
             var caption_html = '';
             if (this.model.get('filter')) {
-                caption_html += 'Filter <input class="filter" />';
+                caption_html += 'Filter <input class="filter" value="'+this.model.get('filter_value')+'" />';
             }
             this.caption.html(caption_html);
         },
@@ -184,26 +189,17 @@
         },
         render_foot: function () {
             var foot_html, last_page;
-            foot_html = '';
+            foot_html = '<div class="btn-group">';
             if (this.model.get('paginate')) {
                 last_page = this.model.get_last_page();
-                if (this.model.get('page') > 1) {
-                    foot_html += '<a href="#" class="first">&laquo;</a>';
-                    foot_html += '<a href="#" class="prev">&lt;</a>';
-                } else {
-                    foot_html += '&laquo;';
-                    foot_html += '&lt;';
-                }
-                foot_html += 'Page ' + (this.model.get('page'));
+                foot_html += '<button class="btn first">&laquo;</button>';
+                foot_html += '<button class="btn prev">&lt;</button>';
+                foot_html += '<button disabled="disabled" class="btn">Page ' + (this.model.get('page'));
                 foot_html += ' of ' + last_page;
-                if (this.model.get('page') < last_page) {
-                    foot_html += '<a href="#" class="next">&gt;</a>';
-                    foot_html += '<a href="#" class="last">&raquo;</a>';
-                } else {
-                    foot_html += '&gt;';
-                    foot_html += '&raquo;';
-                }
+                foot_html += '<button class="btn next">&gt;</button>';
+                foot_html += '<button class="btn last">&raquo;</button>';
             }
+            foot_html += '</div>';
             this.foot.html(foot_html);
         }
     });
