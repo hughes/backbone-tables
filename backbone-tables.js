@@ -72,6 +72,7 @@
             this.model.get('items').bind('add remove', this.render_body, this);
             this.model.bind('change:filter_value', this.render_foot, this);
             this.model.bind('change:filter_value', this.render_body, this);
+            this.model.get('items').bind('change', this.render_body, this);
         },
         filter: function (event) {
             this.model.set({
