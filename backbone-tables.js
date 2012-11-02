@@ -57,7 +57,7 @@
             return this.get('items').filter(function (item) {
                 var i, match = false;
                 for (i = 0; i < keys.length; i += 1) {
-                    if (String(item.get(keys[i])).indexOf(value) !== -1) {
+                    if (String(item.get(keys[i])).toLowerCase().indexOf(value.toLowerCase()) !== -1) {
                         match = true;
                         break;
                     }
