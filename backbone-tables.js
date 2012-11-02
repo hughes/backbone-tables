@@ -14,7 +14,9 @@
             items: undefined,
             paginate: false,
             items_per_page: 20,
-            page: 1
+            page: 1,
+            filter: false,
+            filter_value: ''
         },
         sort: function (index, reverse) {
             var items, key, comparator;
@@ -35,6 +37,22 @@
             };
             items.comparator = comparator;
             items.sort();
+        },
+        filtered: function () {
+            var keys = _.pluck(this.get('columns'), 'data'), value = this.get('filter_value');
+            if (!value) {
+                return this.get('items').toArray();
+            }
+            return this.get('items').filter(function (item) {
+                var i, match = false;
+                for (i = 0; i < keys.length; i += 1) {
+                    if (String(item.get(keys[i])).indexOf(value) != -1) {
+                        match = true;
+                        break;
+                    }
+                }
+                return match;
+            });
         }
     });
     Backbone.TableView = Backbone.View.extend({
@@ -44,17 +62,25 @@
             'click .prev': 'prev_page',
             'click .next': 'next_page',
             'click .first': 'first_page',
-            'click .last': 'last_page'
+            'click .last': 'last_page',
+            'change .filter': 'filter'
         },
         initialize: function () {
             this.model.bind('change:page', this.render_foot, this);
             this.model.bind('change:page', this.render_body, this);
             this.model.get('items').bind('add remove', this.render_foot, this);
             this.model.get('items').bind('add remove', this.render_body, this);
+            this.model.bind('change:filter_value', this.render_foot, this);
+            this.model.bind('change:filter_value', this.render_body, this);
+        },
+        filter: function (event) {
+            this.model.set({
+                filter_value: $(event.target).val()
+            });
         },
         last_page: function () {
             this.model.set({
-                page: Math.ceil(this.model.get('items').length / this.model.get('items_per_page'))
+                page: Math.ceil(this.model.filtered().length / this.model.get('items_per_page'))
             });
         },
         first_page: function () {
@@ -102,6 +128,9 @@
         },
         render_caption: function () {
             var caption_html = '';
+            if (this.model.get('filter')) {
+                caption_html += 'Filter <input class="filter" />';
+            }
             this.caption.html(caption_html);
         },
         render_head: function () {
@@ -113,11 +142,13 @@
             this.head.html(head_html);
         },
         render_body: function () {
-            var body_html, keys, first, last, i, item, cell_func, row_html;
+            var body_html, keys, first, last, i, item, cell_func, row_html, filtered;
             body_html = '';
             keys = _.pluck(this.model.get('columns'), 'data');
 
-            first = 0; last = this.model.get('items').length;
+            filtered = this.model.filtered();
+
+            first = 0; last = filtered.length;
             if (this.model.get('paginate')) {
                 first = (this.model.get('page') - 1) * this.model.get('items_per_page');
                 last = Math.min(last, first + this.model.get('items_per_page'));
@@ -128,7 +159,7 @@
             };
 
             for (i = first; i < last; i += 1) {
-                item = this.model.get('items').at(i);
+                item = filtered[i];
                 row_html = '<tr>';
                 _.each(keys, cell_func);
                 row_html += '</tr>';
@@ -141,13 +172,13 @@
             var foot_html, last_page;
             foot_html = '';
             if (this.model.get('paginate')) {
-                last_page = Math.max(1, Math.ceil(this.model.get('items').length / this.model.get('items_per_page')));
+                last_page = Math.max(1, Math.ceil(this.model.filtered().length / this.model.get('items_per_page')));
                 if (this.model.get('page') > 1) {
                     foot_html += '<a href="#" class="first">&laquo;</a>';
                     foot_html += '<a href="#" class="prev">&lt;</a>';
                 } else {
-                    foot_html += '&laquo;'
-                    foot_html += '&lt;'
+                    foot_html += '&laquo;';
+                    foot_html += '&lt;';
                 }
                 foot_html += 'Page ' + (this.model.get('page'));
                 foot_html += ' of ' + last_page;
@@ -155,8 +186,8 @@
                     foot_html += '<a href="#" class="next">&gt;</a>';
                     foot_html += '<a href="#" class="last">&raquo;</a>';
                 } else {
-                    foot_html += '&gt;'
-                    foot_html += '&raquo;'
+                    foot_html += '&gt;';
+                    foot_html += '&raquo;';
                 }
             }
             this.foot.html(foot_html);
