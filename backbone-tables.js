@@ -18,7 +18,7 @@
             filter: false,
             filter_value: ''
         },
-        initialize: function() {
+        initialize: function () {
             this.bind('change:filter_value change:items_per_page change:page change:filter', this.clamp_page, this);
         },
         clamp_page: function () {
@@ -57,7 +57,7 @@
             return this.get('items').filter(function (item) {
                 var i, match = false;
                 for (i = 0; i < keys.length; i += 1) {
-                    if (String(item.get(keys[i])).indexOf(value) != -1) {
+                    if (String(item.get(keys[i])).indexOf(value) !== -1) {
                         match = true;
                         break;
                     }
@@ -146,17 +146,15 @@
             this.caption.html(caption_html);
         },
         render_head: function () {
-            var head_html = '<tr>';
+            var head_row = $('<tr></tr>');
             _.each(this.model.get('columns'), function (column, index) {
-                head_html += '<th index="' + index + '">' + column.title + '</th>';
+                head_row.append('<th index="' + index + '">' + column.title + '</th>');
             });
-            head_html += '</tr>';
-            this.head.html(head_html);
+            this.head.empty().append(head_row);
         },
         render_body: function () {
-            var body_html, first, last, i, item, cell_func, row_html, filtered;
+            var first, last, i, item, cell_func, filtered, row;
 
-            body_html = '';
             filtered = this.model.filtered();
             first = 0; last = filtered.length;
 
@@ -166,23 +164,23 @@
             }
 
             cell_func = function (column) {
+                var cell = $('<td></td>');
                 // use the column's render function if it exists
                 if (typeof column.render === 'function') {
-                    row_html += '<td>' + column.render(item) + '</td>';
+                    cell.append(column.render(item));
                 } else {
-                    row_html += '<td>' + item.get(column.data) + '</td>';
+                    cell.append(item.get(column.data));
                 }
+                row.append(cell);
             };
 
+            this.body.empty();
             for (i = first; i < last; i += 1) {
                 item = filtered[i];
-                row_html = '<tr>';
+                row = $('<tr></tr>');
                 _.each(this.model.get('columns'), cell_func);
-                row_html += '</tr>';
-                body_html += row_html;
+                this.body.append(row);
             }
-
-            this.body.html(body_html);
         },
         render_foot: function () {
             var foot_html, last_page;
