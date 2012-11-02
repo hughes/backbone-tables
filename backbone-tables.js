@@ -18,6 +18,17 @@
             filter: false,
             filter_value: ''
         },
+        initialize: function() {
+            this.bind('change:filter_value change:items_per_page change:page change:filter', this.clamp_page, this);
+        },
+        clamp_page: function () {
+            this.set({
+                page: Math.max(1, Math.min(this.get_last_page(), this.get('page')))
+            });
+        },
+        get_last_page: function () {
+            return Math.max(1, Math.ceil(this.filtered().length / this.get('items_per_page')));
+        },
         sort: function (index, reverse) {
             var items, key, comparator;
 
@@ -81,7 +92,7 @@
         },
         last_page: function () {
             this.model.set({
-                page: Math.ceil(this.model.filtered().length / this.model.get('items_per_page'))
+                page: this.model.get_last_page()
             });
         },
         first_page: function () {
@@ -143,26 +154,30 @@
             this.head.html(head_html);
         },
         render_body: function () {
-            var body_html, keys, first, last, i, item, cell_func, row_html, filtered;
+            var body_html, first, last, i, item, cell_func, row_html, filtered;
+
             body_html = '';
-            keys = _.pluck(this.model.get('columns'), 'data');
-
             filtered = this.model.filtered();
-
             first = 0; last = filtered.length;
+
             if (this.model.get('paginate')) {
                 first = (this.model.get('page') - 1) * this.model.get('items_per_page');
                 last = Math.min(last, first + this.model.get('items_per_page'));
             }
 
-            cell_func = function (key) {
-                row_html += '<td>' + item.get(key) + '</td>';
+            cell_func = function (column) {
+                // use the column's render function if it exists
+                if (typeof column.render === 'function') {
+                    row_html += '<td>' + column.render(item) + '</td>';
+                } else {
+                    row_html += '<td>' + item.get(column.data) + '</td>';
+                }
             };
 
             for (i = first; i < last; i += 1) {
                 item = filtered[i];
                 row_html = '<tr>';
-                _.each(keys, cell_func);
+                _.each(this.model.get('columns'), cell_func);
                 row_html += '</tr>';
                 body_html += row_html;
             }
@@ -173,7 +188,7 @@
             var foot_html, last_page;
             foot_html = '';
             if (this.model.get('paginate')) {
-                last_page = Math.max(1, Math.ceil(this.model.filtered().length / this.model.get('items_per_page')));
+                last_page = this.model.get_last_page();
                 if (this.model.get('page') > 1) {
                     foot_html += '<a href="#" class="first">&laquo;</a>';
                     foot_html += '<a href="#" class="prev">&lt;</a>';
